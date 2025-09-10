@@ -81,6 +81,7 @@
 
   <script>
     // === SETUP SUPABASE ===
+import { createClient } from '@supabase/supabase-js';
     const supabaseUrl = "https://lgaloxpcoofoyhrcfkal.supabase.co"; // ganti
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnYWxveHBjb29mb3locmNma2FsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MTg3ODQsImV4cCI6MjA3MzA5NDc4NH0.BTPEwHHMxjbAHdSqC5mUp76DsPZj0iXlmeY-t5ZTL4o"; // ganti
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
@@ -164,4 +165,5 @@
 </body>
 
 </html>
+
 

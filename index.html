@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Sales Dashboard</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background: #f8f9fa;
+      color: #333;
+    }
+    h1, h2 {
+      color: #0d6efd;
+    }
+    form {
+      background: #fff;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      max-width: 400px;
+    }
+    label {
+      display: block;
+      margin-top: 0.5rem;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 1rem;
+      background: #0d6efd;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0b5ed7;
+    }
+    #dashboard {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      max-width: 500px;
+    }
+    .card {
+      border-bottom: 1px solid #ddd;
+      padding: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Input Sales Order</h1>
+  
+  <form id="salesForm">
+    <label>Nama Sales:</label>
+    <select id="salesSelect"></select>
+    
+    <label>No. SO:</label>
+    <input type="text" id="nomorSO" required>
+    
+    <label>Barang:</label>
+    <select id="barangSelect"></select>
+    
+    <label>Nominal:</label>
+    <input type="number" id="nominal" required>
+    
+    <button type="submit">Simpan</button>
+  </form>
+
+  <h2>Dashboard Sales</h2>
+  <div id="dashboard">Pilih Sales untuk melihat ringkasan.</div>
+
+  <script>
+    // === SETUP SUPABASE ===
+    const supabaseUrl = "https://lgaloxpcoofoyhrcfkal.supabase.co"; // ganti
+    const supabaseKey = "YOUR_PUBLIC_ANON_KEY"; // ganti
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Load dropdowns
+    async function loadDropdowns() {
+      let { data: sales } = await supabase.from("sales").select("*");
+      let { data: barang } = await supabase.from("barang").select("*");
+
+      const salesSelect = document.getElementById("salesSelect");
+      sales.forEach(s => {
+        let opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = s.nama;
+        salesSelect.appendChild(opt);
+      });
+
+      const barangSelect = document.getElementById("barangSelect");
+      barang.forEach(b => {
+        let opt = document.createElement("option");
+        opt.value = b.id;
+        opt.textContent = `${b.nama_barang} - Rp${b.harga.toLocaleString()}`;
+        barangSelect.appendChild(opt);
+      });
+
+      // load dashboard default (sales pertama)
+      if (sales.length > 0) {
+        loadDashboard(sales[0].id);
+      }
+
+      salesSelect.addEventListener("change", (e) => {
+        loadDashboard(e.target.value);
+      });
+    }
+
+    // Simpan data sales order
+    document.getElementById("salesForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const salesId = document.getElementById("salesSelect").value;
+      const nomorSO = document.getElementById("nomorSO").value;
+      const barangId = document.getElementById("barangSelect").value;
+      const nominal = document.getElementById("nominal").value;
+
+      let { error } = await supabase.from("sales_order").insert([
+        { sales_id: salesId, nomor_so: nomorSO, barang_id: barangId, nominal: nominal, tanggal: new Date() }
+      ]);
+
+      if (error) {
+        alert("Gagal simpan data: " + error.message);
+      } else {
+        alert("Sales order tersimpan!");
+        loadDashboard(salesId);
+      }
+    });
+
+    // Load Dashboard per sales
+    async function loadDashboard(salesId) {
+      const { data, error } = await supabase
+        .from("sales_summary")
+        .select("*")
+        .eq("sales_id", salesId)
+        .single();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      document.getElementById("dashboard").innerHTML = `
+        <div class="card"><strong>Nama:</strong> ${data.nama_sales}</div>
+        <div class="card"><strong>Masa Kerja:</strong> ${data.start_date} - ${data.end_date ?? "Sekarang"}</div>
+        <div class="card"><strong>Jumlah Order:</strong> ${data.total_order}</div>
+        <div class="card"><strong>Total Penjualan:</strong> Rp${parseFloat(data.total_nominal).toLocaleString()}</div>
+      `;
+    }
+
+    loadDropdowns();
+  </script>
+</body>
+</html>
